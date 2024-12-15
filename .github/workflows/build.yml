@@ -1,94 +1,59 @@
-name: Automated Builds (IPA & APK)
+name: Build Flutter APK with Flet
 
 on:
   push:
     branches:
-      - master
       - main
   pull_request:
     branches:
-      - master
       - main
-  workflow_dispatch:
-
-env:
-  BUILD_NUMBER: 1
-  BUILD_VERSION: 1.0.0
-  PYTHON_VERSION: 3.13.1
-  FLUTTER_VERSION: 3.24.0
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Checkout the code
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      # Step 1: Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # Step 2: Setup Python environment
-    - name: Setup Python ${{ env.PYTHON_VERSION }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
+      # Step 2: Setup Python environment
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.13.1
 
-    # Step 3: Install Python dependencies
-    - name: Install Python Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
+      # Step 3: Update and install necessary tools
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y snapd
+          sudo snap install flutter
+          sudo apt install -y android-sdk sdkmanager
 
-    # Step 4: Setup Flutter environment
-    - name: Setup Flutter ${{ env.FLUTTER_VERSION }}
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: ${{ env.FLUTTER_VERSION }}
+      # Step 4: Setup Android NDK and accept licenses
+      - name: Setup Android SDK
+        run: |
+          sudo -E sdkmanager --install "ndk;23.1.7779620"
+          yes | sudo -E sdkmanager --licenses
 
-    # Step 5: Set Java version to 11 (required for Gradle)
-    - name: Set Java Version
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'zulu'
-        java-version: '11'
+      # Step 5: Install Python dependencies
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    # Step 6: Accept Android SDK licenses
-    - name: Accept Android SDK Licenses
-      run: yes | flutter doctor --android-licenses
+      # Step 6: Build the APK using Flet
+      - name: Build APK
+        run: |
+          flutter config --no-analytics
+          flet build apk --verbose --build-number=$BUILD_NUMBER --build-version=$BUILD_VERSION
 
-    # Step 7: Ensure all Flutter dependencies are resolved
-    - name: Flutter Pub Get
-      run: flutter pub get
-
-    # Step 8: Upgrade Flutter dependencies (optional but recommended)
-    - name: Upgrade Flutter Dependencies
-      run: flutter pub upgrade
-
-    # Step 9: Build IPA
-    - name: Build IPA
-      run: |
-        flutter config --no-analytics
-        flet build ipa --verbose --build-number=$BUILD_NUMBER --build-version=$BUILD_VERSION
-
-    # Step 10: Upload IPA artifact
-    - name: Upload IPA Artifact
-      uses: actions/upload-artifact@v4.3.4
-      with:
-        name: ipa-build-artifact
-        path: build/ipa
-        if-no-files-found: warn
-        overwrite: false
-
-    # Step 11: Build APK
-    - name: Build APK
-      run: |
-        flutter config --no-analytics
-        flet build apk --verbose --build-number=$BUILD_NUMBER --build-version=$BUILD_VERSION --no-tree-shake-icons
-
-    # Step 12: Upload APK artifact
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4.3.4
-      with:
-        name: apk-build-artifact
-        path: build/apk
-        if-no-files-found: warn
-        overwrite: false
+      # Step 7: Upload APK artifact
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: apk-build-artifact
+          path: build/apk
+          if-no-files-found: warn
+          overwrite: false
