@@ -43,18 +43,22 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
+          
+       # Accept Android licenses
+      - name: Accept Android Licenses
+        run: |
+          flutter doctor --android-licenses
       
       # Install Flet and other dependencies
       - name: Install Dependencies
         run: |
           pip install flet
-          flutter pub get
       
-      # Configure Flutter for Android
-      - name: Configure Flutter
-        run: |
-          flutter config --android-sdk ${ANDROID_HOME}
-          flutter doctor -v
+      # # Configure Flutter for Android
+      # - name: Configure Flutter
+      #   run: |
+      #     flutter config --android-sdk ${ANDROID_HOME}
+      #     flutter doctor -v
       
       # Build the APK
       - name: Build APK
