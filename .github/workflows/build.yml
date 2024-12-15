@@ -15,11 +15,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Set up Python environment
+      # Set up Python 3.13.1
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.13.1'
 
       # Install Flet
       - name: Install Flet
@@ -27,21 +27,20 @@ jobs:
           python -m pip install --upgrade pip
           pip install flet
 
-      # Install Flutter SDK
+      # Install Flutter SDK using Snap
       - name: Install Flutter SDK
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip
-          wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.13.0-stable.tar.xz
-          sudo tar -xf flutter_linux_3.13.0-stable.tar.xz -C /opt
-          echo "export PATH=/opt/flutter/bin:$PATH" >> $GITHUB_ENV
+          sudo apt-get install -y snapd
+          sudo snap install flutter --classic
+          echo "PATH=/snap/bin:$PATH" >> $GITHUB_ENV
+          source $GITHUB_ENV
           flutter doctor --android-licenses
           flutter doctor
 
       # Install Android SDK and dependencies
       - name: Install Android SDK
         run: |
-          sudo apt-get update
           sudo apt-get install -y openjdk-11-jdk
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
