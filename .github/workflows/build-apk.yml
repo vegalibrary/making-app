@@ -1,0 +1,55 @@
+name: Build Flet APK
+
+on:
+  push:
+    branches:
+      - main  # Trigger workflow on pushes to the main branch
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Install Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      # Install Java (required for Android SDK)
+      - name: Install Java
+        run: sudo apt-get update && sudo apt-get install -y openjdk-17-jdk
+
+      # Install Flutter
+      - name: Install Flutter
+        run: |
+          curl -LO https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.13.0-stable.tar.xz
+          sudo tar xf flutter_linux_3.13.0-stable.tar.xz -C /opt
+          echo "export PATH=\$PATH:/opt/flutter/bin" >> $GITHUB_ENV
+          source $GITHUB_ENV
+          flutter doctor
+          flutter config --no-analytics
+          flutter precache --android
+          yes | flutter doctor --android-licenses
+
+      # Install Flet
+      - name: Install Flet
+        run: pip install flet
+
+      # Build the APK
+      - name: Build APK
+        run: |
+          flet build apk
+
+      # Upload the APK as an artifact
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: apk
+          path: build/
