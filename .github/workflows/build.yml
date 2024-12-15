@@ -27,20 +27,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install flet
 
-      # Install Flutter SDK using Snap
-      - name: Install Flutter SDK
+      # Install Flutter using GitHub Action
+      - name: Install Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.0' # Replace with the Flutter version you need
+
+      # Accept Android licenses and check Flutter setup
+      - name: Set up Flutter Environment
         run: |
-          sudo apt-get update
-          sudo apt-get install -y snapd
-          sudo snap install flutter --classic
-          echo "PATH=/snap/bin:$PATH" >> $GITHUB_ENV
-          source $GITHUB_ENV
           flutter doctor --android-licenses
           flutter doctor
 
       # Install Android SDK and dependencies
       - name: Install Android SDK
         run: |
+          sudo apt-get update
           sudo apt-get install -y openjdk-11-jdk
           yes | sdkmanager --licenses
           sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
