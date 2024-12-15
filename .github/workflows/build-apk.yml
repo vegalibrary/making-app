@@ -1,52 +1,68 @@
 name: Build Flet APK
-
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
 jobs:
   build:
     name: Build & Release
     runs-on: ubuntu-latest
-
     steps:
       # Checkout the repository
       - name: Checkout Code
         uses: actions/checkout@v3
-
+      
       # Install Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-
+      
       # Install Java (required for Android SDK)
       - name: Install Java
         uses: actions/setup-java@v3.12.0
         with:
           distribution: 'oracle'
           java-version: '17'
-
+      
+      # Install Android SDK
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          sdk-version: 35
+      
+      # Accept Android licenses
+      - name: Accept Android Licenses
+        run: |
+          yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+      
       # Install flutter
       - name: Set Up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
-
-      # Install Flet
-      - name: Install Flet
-        run: pip install flet
-
+      
+      # Install Flet and other dependencies
+      - name: Install Dependencies
+        run: |
+          pip install flet
+          flutter pub get
+      
+      # Configure Flutter for Android
+      - name: Configure Flutter
+        run: |
+          flutter config --android-sdk ${ANDROID_HOME}
+          flutter doctor -v
+      
       # Build the APK
       - name: Build APK
         run: flet build apk
-
+      
       # Upload the APK as an artifact
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: apk
-          path: build/
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
