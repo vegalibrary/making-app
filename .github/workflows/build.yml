@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.13'
+          python-version: '3.10'
 
       # Install Flet
       - name: Install Flet
@@ -27,25 +27,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install flet
 
-      # Install Android SDK and tools
+      # Install Flutter SDK
+      - name: Install Flutter SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.13.0-stable.tar.xz
+          sudo tar -xf flutter_linux_3.13.0-stable.tar.xz -C /opt
+          echo "export PATH=/opt/flutter/bin:$PATH" >> $GITHUB_ENV
+          flutter doctor --android-licenses
+          flutter doctor
+
+      # Install Android SDK and dependencies
       - name: Install Android SDK
         run: |
           sudo apt-get update
-          sudo apt-get install -y wget unzip openjdk-11-jdk
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip cmdline-tools.zip
-          mkdir -p $HOME/android-sdk/cmdline-tools
-          mv cmdline-tools $HOME/android-sdk/cmdline-tools/latest
-          echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "export PATH=$HOME/android-sdk/cmdline-tools/latest/bin:$PATH" >> $GITHUB_ENV
-          echo "export PATH=$HOME/android-sdk/platform-tools:$PATH" >> $GITHUB_ENV
-          echo "export PATH=$HOME/android-sdk/emulator:$PATH" >> $GITHUB_ENV
-          yes | $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-          $HOME/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+          sudo apt-get install -y openjdk-11-jdk
+          yes | sdkmanager --licenses
+          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
 
-      # Build APK
+      # Build APK using Flet
       - name: Build APK
         run: |
+          flutter pub get
           flet build apk
 
       # Upload APK as artifact
