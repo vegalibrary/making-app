@@ -7,7 +7,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
+  build:
+    name: Build & Release
     runs-on: ubuntu-latest
 
     steps:
@@ -23,34 +24,17 @@ jobs:
 
       # Install Java (required for Android SDK)
       - name: Install Java
-        run: sudo apt-get update && sudo apt-get install -y openjdk-17-jdk
+        uses: actions/setup-java@v3.12.0
+        with:
+          distribution: 'oracle'
+          java-version: '17'
 
-      # Install Android SDK
-      - name: Install Android SDK
-        run: |
-          mkdir -p $HOME/android-sdk
-          curl -Lo android-sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip
-          unzip android-sdk.zip -d $HOME/android-sdk
-          mkdir -p $HOME/android-sdk/cmdline-tools/latest
-          mv $HOME/android-sdk/cmdline-tools/* $HOME/android-sdk/cmdline-tools/latest/
-          echo "export ANDROID_HOME=$HOME/android-sdk" >> $GITHUB_ENV
-          echo "export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH" >> $GITHUB_ENV
-          source $GITHUB_ENV
-          sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.0"
-
-      # Install Flutter
-      - name: Install Flutter
-        run: |
-          mkdir -p $HOME/flutter
-          curl -LO https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.13.0-stable.tar.xz
-          tar xf flutter_linux_3.13.0-stable.tar.xz -C $HOME/flutter --strip-components=1
-          echo "$HOME/flutter/bin" >> $GITHUB_PATH
-          source $GITHUB_PATH
-          flutter doctor
-          flutter config --no-analytics
-          flutter precache --android
-          yes | flutter doctor --android-licenses
+      # Install flutter
+      - name: Set Up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
 
       # Install Flet
       - name: Install Flet
