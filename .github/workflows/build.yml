@@ -1,59 +1,56 @@
-name: Build Flutter APK with Flet
+name: Build Android APK with Flet
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-apk:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the code
-      - name: Checkout code
+      # Checkout the code
+      - name: Checkout Code
         uses: actions/checkout@v3
 
-      # Step 2: Setup Python environment
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.13.1
+          python-version: '3.13.1'  # Ensure compatible Python version
 
-      # Step 3: Update and install necessary tools
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y snapd
-          sudo snap install flutter --classic
-          sudo apt install -y android-sdk sdkmanager
-
-      # Step 4: Setup Android NDK and accept licenses
-      - name: Setup Android SDK
-        run: |
-          sudo -E sdkmanager --install "ndk;23.1.7779620"
-          yes | sudo -E sdkmanager --licenses
-
-      # Step 5: Install Python dependencies
-      - name: Install Python dependencies
+      # Install Flet and dependencies
+      - name: Install Flet
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install flet
 
-      # Step 6: Build the APK using Flet
+      # Set up Java environment for Android build tools
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'  # Required for Android tools
+
+      # Install Android SDK
+      - name: Install Android SDK
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: default
+          arch: x86_64
+          channel: stable
+
+      # Build APK
       - name: Build APK
         run: |
-          flutter config --no-analytics
-          flet build apk --verbose --build-number=$BUILD_NUMBER --build-version=$BUILD_VERSION
+          flet build apk
 
-      # Step 7: Upload APK artifact
+      # Upload APK as artifact
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4.3.4
+        uses: actions/upload-artifact@v3
         with:
-          name: apk-build-artifact
-          path: build/apk
-          if-no-files-found: warn
-          overwrite: false
+          name: android-apk
+          path: build/app/outputs/apk/release/*.apk
